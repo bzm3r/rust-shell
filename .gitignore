@@ -15,7 +15,9 @@ Cargo.lock
 
 .direnv
 
-
 # Added by cargo
 
 /target
+
+# custom
+/test-project
