@@ -19,7 +19,5 @@ Cargo.lock
 
 # custom
 .direnv
-.cache
+.scache
 .cargo
-# this is where individual projects can live, all using the same parent rust environment
-projects

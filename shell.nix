@@ -10,6 +10,9 @@ pkgs.mkShell.override {
   stdenv = pkgs.stdenvAdapters.useMoldLinker pkgs.clangStdenv;
 }
 {
+  name = "rust-template";
+
+  # is this actually necessary here?
   buildInputs = with pkgs; [
     npins
   ];
@@ -41,9 +44,10 @@ pkgs.mkShell.override {
     pwd
     export nixpkgs=${sources.nixpkgs.outPath}
     export NIX_PATH=nixpkgs=${sources.nixpkgs.outPath}
-    mkdir -p .cargo
-    cp -f ${cargoToml} ./.cargo/cargo.toml
-    mkdir ./.cache
-    export SCCACHE_DIR=./.cache
+    mkdir .cargo
+    cp --remove-destination ${cargoToml} ./.cargo/Cargo.toml
+    mkdir .sccache
+    export SCCACHE_DIR="$(realpath ./.sccache)"
+    export RUSTC_WRAPPER="$(realpath ./.sccache)"
   '';
 }
