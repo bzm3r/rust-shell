@@ -21,3 +21,6 @@ Cargo.lock
 .direnv
 .scache
 .cargo
+
+# .sccache
+.sccache
