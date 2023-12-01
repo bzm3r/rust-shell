@@ -21,4 +21,5 @@ Cargo.lock
 .direnv
 .cache
 .cargo
-test-project
+# this is where individual projects can live, all using the same parent rust environment
+projects
