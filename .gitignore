@@ -19,7 +19,6 @@ Cargo.lock
 
 # custom
 .direnv
-.scache
 .cargo
 
 # .sccache
