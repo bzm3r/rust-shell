@@ -5,13 +5,17 @@ let
       (import sources.rust-overlay)
     ];
   };
+  name = "rust_stable";
+  cacheDir = "~/.${name}_sccache";
+  cargoConfigDir = "~/.cargo_${name}/";
+  cargoConfigPath = cargoConfigDir + "/config.toml";
 in
 pkgs.mkShell.override
 {
   stdenv = pkgs.stdenvAdapters.useMoldLinker pkgs.clangStdenv;
 }
 {
-  name = "rust_stable";
+  inherit name;
 
   packages = with pkgs; [
     (
@@ -28,12 +32,11 @@ pkgs.mkShell.override
       }
     )
     sccache
-    npins
   ];
 
   shellHook =
     let
-      cargoConf = pkgs.writeText "cargo.toml"
+      cargoConfigToml = pkgs.writeText "config.toml"
         ''
           [build]
           rustc-wrapper = "${pkgs.sccache}/bin/sccache"
@@ -44,19 +47,20 @@ pkgs.mkShell.override
       export nixpkgs=${sources.nixpkgs.outPath}
       export NIX_PATH=nixpkgs=${sources.nixpkgs.outPath}
 
-      # make a cargo directory (if it doesn't already exist)
-      mkdir .cargo
+      # make a .cargo directory (if it doesn't already exist)
+      # overwrite any ~/$USER/.<name>_cargo/config.toml that
+      # exists
+      echo "Creating CARGO_HOME at ${cargoConfigDir}"
+      export CARGO_HOME=${cargoConfigDir}
+      mkdir ${cargoConfigDir}
+      cp --remove-destination ${cargoConfigToml} ${cargoConfigPath}
 
-      # overwrite any ./.cargo/config.toml that exists
-      cp --remove-destination ${cargoConf} ./.cargo/config.toml
+      # create .<name>_sccache dir (if it doesn't already exist)
+      echo "Creating SCCACHE_DIR at ${cacheDir}"
+      mkdir ${cacheDir}
+      export SCCACHE_DIR="$(realpath ${cacheDir})"
 
-      # create .sccache dir (if it doesn't already exist)
-      mkdir .sccache
-
-      # let sccache know where we want to store data
-      export SCCACHE_DIR="$(realpath ./.sccache)"
-
-      # # use zsh, not bash (nix-shell starts bash)
+      # initialize zsh (nix-shell starts bash)
       # exec zsh
     '';
 }
