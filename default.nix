@@ -1,6 +1,6 @@
 { lib, stdenv, buildEnv }:
 
-{ name ? "rust_stable"
+{ name ? "rust-stable"
 , # a list of packages to add to the shell environment
   packages ? [ ]
 , # propagate all the inputs from the given derivations: list of attrsets
