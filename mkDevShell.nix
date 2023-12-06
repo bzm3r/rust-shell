@@ -73,7 +73,8 @@
   # , propagatedBuildInputs ? [ ]
   # , propagatedNativeBuildInputs ? [ ]
   #
-  # We created custom
+  # `customShellHook` is a function which takes: (inputShellHooks, shellEnv) ->
+  # <<store path to an executable text file>>
 , customShellHook
   # The remaining attributes will all be converted to into environment variables
 , ...
@@ -126,6 +127,7 @@ in
   #   * https://nixos.org/manual/nixpkgs/unstable/#ssec-stdenv-attributes
   # )
 stdenv.mkDerivation ({
+  inherit name;
   # =================================================================
   # (From: https://nixos.org/manual/nixpkgs/unstable/#chap-cross)
   # Two important categories:
@@ -161,14 +163,14 @@ stdenv.mkDerivation ({
   installPhase =
     let
       # shellHooks across inputs are collated into one hook
-      collatedInputShellHooks = lib.concatStringsSep "\n" (lib.catAttrs "shellHook"
+      inputShellHooks = lib.concatStringsSep "\n" (lib.catAttrs "shellHook"
         (lib.reverseList inputsFrom ++ [ inputAttrs ]));
     in
     ''
       runHook preInstall
 
       install --target $out/build_env -D build_env
-      install -m 755 ${customShellHook collatedInputShellHooks shellEnv} -D ${name}
+      install -m 755 ${customShellHook inputShellHooks shellEnv} -D ${name}
 
       runHook postInstall
     '';
