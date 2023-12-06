@@ -1,5 +1,4 @@
-{ lib, stdenv, buildEnv }:
-
+{ lib, buildEnv, stdenv, writeTextFile }:
 # mkDevShell is closely based on the structure of mkShell
 # * https://stackoverflow.com/a/71112117/3486684
 {
@@ -7,20 +6,25 @@
   # mkShell Attributes:
   # https://nixos.org/manual/nixpkgs/unstable/#sec-pkgs-mkShell-attributes
   # ===========================================
+  #
   # List of executable packages to add to the nix-shell environment.
   packages ? [ ]
+  #
   # -----------------------
-, # Add build dependencies of the listed derivations to the nix-shell environment.
-  inputsFrom ? [ ]
+  #
+  # Add build dependencies of the listed derivations to the nix-shell environment.
+, inputsFrom ? [ ]
+  #
   # -----------------------
   # Bash statements that are executed by nix-shell.
-, shellHook ? ""
+#, shellHook ? ""
   # -----------------------
   # ===========================================
   # The following are attributes inherited by mkShell from mkDerivation
   # ===========================================
-, # Set the name of the derivation. (Not optional)
-  name
+  #
+  # Set the name of the derivation. (Not optional)
+, name
   # -----------------------
   # Many packages have dependencies that are not provided in the standard
   # environment. It’s usually sufficient to specify those dependencies in the
@@ -54,37 +58,48 @@
 #, unpackPhase, buildPhase, installPhase
 #
 # and though we could use the phases, we could also just define our own builder:
-, builder ? ""
+# , builder ? ""
+# #
+# # Add dependencies to nativeBuildInputs if they are executed during the build
+# # process.
+# , nativeBuildInputs ? [ ]
+# # Add dependencies to buildInputs if they will end up copied or linked into the
+# # final output or otherwise used at runtime.
+# , buildInputs ? [ ]
+# # Dependencies needed only to run tests are similarly classified between native
+# # (executed during build) and non-native (executed at runtime). These
+# # dependencies are only injected when doCheck is set to true.
+# #, nativeCheckInputs, checkInputs
+# , propagatedBuildInputs ? [ ]
+# , propagatedNativeBuildInputs ? [ ]
 #
-# Add dependencies to nativeBuildInputs if they are executed during the build
-# process.
-, nativeBuildInputs ? [ ]
-# Add dependencies to buildInputs if they will end up copied or linked into the
-# final output or otherwise used at runtime.
-, buildInputs ? [ ]
-# Dependencies needed only to run tests are similarly classified between native
-# (executed during build) and non-native (executed at runtime). These
-# dependencies are only injected when doCheck is set to true.
-#, nativeCheckInputs, checkInputs
-, propagatedBuildInputs ? [ ]
-, propagatedNativeBuildInputs ? [ ]
+# We created custom
+, customShellHook
 # The remaining attributes will all be converted to into environment variables
 , ...
 }@inputAttrs:
 let
-  mergeInputs = attr:
-    # if the attribute `attr` is an attribute of `inputs`, extract it
-    # (it should be a list, given how it is being used)
-    (inputAttrs.${attr} or [ ]) ++
+  # deduplicates builtInputs across: 1) any corresponding buildInputs in
+  # inputAttrs (the inputs to this `mkDevShell` function), 2) all the
+  # derivations listed in `inputsFrom`, and 3) all the corresponding buildInputs
+  # of these derivations.
+  mergeBuildInputs = buildInputs:
+    # check if there is an attribute with the same name as `focusSet` in this
+    # `mkDevShell's` input attributes; if so, get it, otherwise begin with the
+    # empty list
+    (inputAttrs.${buildInputs} or [ ]) ++
     (
       # lib.subtractLists: subtracts first list from second
       # https://nixos.org/manual/nixpkgs/unstable/
       lib.subtractLists
-        inputsFrom # first list
+        # first list is a list derivations whose build inputs will be included
+        # in the final dev shell's environment.
+        inputsFrom
         (
-          lib.flatten # flattens nested lists into an un-nested one
-            # collect each attribute called `name` from a list of attr sets
-            (lib.catAttrs attr inputsFrom)
+          # flattens nested lists into an un-nested one
+          lib.flatten
+            # remove all buildInputs that are already listed in inputsFrom
+            (lib.catAttrs buildInputs inputsFrom)
         )
     );
 
@@ -99,15 +114,18 @@ let
     "propagatedNativeBuildInputs"
     "shellHook"
   ];
-in
 
+  shellEnv = writeTextFile {
+      name = "shellEnv";
+      text = ''
+      '';
+    };
+in
 # (From:
 #   * https://nixos.org/manual/nixpkgs/unstable/#sec-using-stdenv
 #   * https://nixos.org/manual/nixpkgs/unstable/#ssec-stdenv-attributes
 # )
 stdenv.mkDerivation ({
-  inherit name;
-
   # =================================================================
   # (From: https://nixos.org/manual/nixpkgs/unstable/#chap-cross)
   # Two important categories:
@@ -122,37 +140,43 @@ stdenv.mkDerivation ({
   # and libraries also used at build time. If the dependency doesn’t care about
   # the target platform (i.e. isn’t a compiler or similar tool), put it in
   # nativeBuildInputs instead.
-  buildInputs = mergeInputs "buildInputs";
+  buildInputs = mergeBuildInputs "buildInputs";
 
   # =================================================================
   # These are programs and libraries used at build time that produce programs
   # and libraries also used at build time.
   # A list of dependencies whose host platform is the new derivation’s build
   # platform, and target platform is the new derivation’s host platform.
-  nativeBuildInputs = packages ++ (mergeInputs "nativeBuildInputs");
+  nativeBuildInputs = packages ++ (mergeBuildInputs "nativeBuildInputs");
 
   # A list of dependencies whose host platform is the new derivation’s build
   # platform, and target platform is the new derivation’s host platform.
-  propagatedBuildInputs = mergeInputs "propagatedBuildInputs";
-  propagatedNativeBuildInputs = mergeInputs "propagatedNativeBuildInputs";
+  propagatedBuildInputs = mergeBuildInputs "propagatedBuildInputs";
+  propagatedNativeBuildInputs = mergeBuildInputs "propagatedNativeBuildInputs";
 
   shellHook = lib.concatStringsSep "\n"  (lib.catAttrs "shellHook"
     (lib.reverseList inputsFrom ++ [ inputAttrs ]));
 
-
-  # phases = [ "buildPhase" ];
-
   buildPhase = ''
-    echo "from devShell.nix: $out"
-    { echo "------------------------------------------------------------";
-      echo " WARNING: the existence of this path is not guaranteed.";
-      echo " It is an internal implementation detail for pkgs.mkShell.";
-      echo "------------------------------------------------------------";
-      echo;
-      # Record all build inputs as runtime dependencies
-      export;
-    } >> "$out"
+    export >> "${shellEnv}"
+  '';
+
+  installPhase = ''
+    runHook preInstall
+
+    install --target $out/build_env -D build_env
+    install -m 755 ${customShellHook shellEnv} -D $out/bin/${name}
+
+    runHook postInstall
   '';
 
   preferLocalBuild = true;
+
+  meta = with lib; {
+    #homepage = "xyz";
+    description = "Rust development shell for integration with IDEs and personal experimentation. This is not meant to be an environment within which builds meant for distribution are produced.";
+    #license = licenses.ofl;
+    platforms = platforms.all;
+    maintainers = [];
+  };
 } // rest)
