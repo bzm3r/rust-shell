@@ -2,7 +2,7 @@
 
 ## Purpose
 * providing rust-analyzer etc. to IDEs
-* running and testing programs on a local machine
+* ease running and testing Rust programs on a personal NixOS configured machine by making the dev shell an installable package
 
 A "development shell" does not provide a pure environment entirely disconnected from the programmers's environment; in fact, it is meant to integrate with various *development*-smoothing tools available in the user's environment (e.g. shells, aliases, scripts, IDEs, etc.).
 
