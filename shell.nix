@@ -5,15 +5,13 @@ let
       (import sources.rust-overlay)
     ];
   };
+  mkDevShell = pkgs.mkShell.override {
+    inherit (pkgs) lib buildEnv;
+    stdenv = pkgs.stdenvAdapters.useMoldLinker pkgs.clangStdenv;
+  };
   name = "rust-stable";
-  cacheDir = "~/.${name}_sccache";
-  cargoConfigDir = "~/.cargo_${name}/";
-  cargoConfigToml = cargoConfigDir + "/config.toml";
 in
-pkgs.mkShell.override
-{
-  stdenv = pkgs.stdenvAdapters.useMoldLinker pkgs.clangStdenv;
-}
+mkDevShell
 {
   inherit name;
 
@@ -32,17 +30,22 @@ pkgs.mkShell.override
       }
     )
     sccache
-    (callPackage )
   ];
 
   shellHook =
     let
-      cargoConfigToml = pkgs.writeText "config.toml"
+      storedCargoConfig = pkgs.writeText "config.toml"
         ''
           [build]
           rustc-wrapper = "${pkgs.sccache}/bin/sccache"
         '';
+      nixkpgsOutPath = sources.nixpkgs.outPath;
+      hook = (import ./hook.nix) pkgs name nixkpgsOutPath {
+        inherit storedCargoConfig;
+      };
     in
     ''
+      echo $out
+      ${hook}
     '';
 }
