@@ -59,13 +59,17 @@ let
     # The output of this function will be the primary executable output of the program (i.e. what the
     # user will call). It will be copied into the nix store in the installPhase
     # of the mkDerivation wrapped by mkDevShell.
-    customShellHook = recordedEnvVars: pkgs.writeTextFile {
+    customShellHook = collatedInputShellHooks: recordedEnvVars: pkgs.writeTextFile {
       inherit name;
+      executable = true;
       text = ''
         #!/usr/bin/env zsh
+        # TODO: convert this into a Rust script ASAP
         set -xeuo pipefail
 
         source ${recordedEnvVars}
+        # Is this done correctly?
+        runHook ${collatedInputShellHooks}
 
         # export variables
         export nixpkgs=${nixpkgsOutPath}
@@ -73,9 +77,14 @@ let
 
         # make a .cargo directory (if it doesn't already exist)
         echo "Creating CARGO_HOME at ${cargoHome}"
+
+        # TODO: Should do folder creation elegantly/robustly later (check to see
+        # if it exists, rather than just blindly creating it).
         mkdir ${cargoHome}
         export CARGO_HOME=${cargoHome}
-        # overwrite any existing config.toml
+
+        # overwrite any existing config.toml with one from home.
+        # TODO: in the future, perform a merge with an existing file?
         cp --remove-destination ${storedCargoConfig} ${cargoConfigPath}
 
         # create .<name>_sccache cargoConfigDir (if it doesn't already exist)
@@ -89,7 +98,6 @@ let
         # continue in interactive mode
         zsh -i
       '';
-      executable = true;
     };
   };
 in

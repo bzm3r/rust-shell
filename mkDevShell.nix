@@ -17,7 +17,7 @@
   #
   # -----------------------
   # Bash statements that are executed by nix-shell.
-#, shellHook ? ""
+  #, shellHook ? ""
   # -----------------------
   # ===========================================
   # The following are attributes inherited by mkShell from mkDerivation
@@ -55,27 +55,27 @@
   # package. The buildPhase helps execute commands necessary to "build it"
   # (whatever that means outside of C-ish contexts), and the installPhase copies
   # the output files to their final locations
-#, unpackPhase, buildPhase, installPhase
-#
-# and though we could use the phases, we could also just define our own builder:
-# , builder ? ""
-# #
-# # Add dependencies to nativeBuildInputs if they are executed during the build
-# # process.
-# , nativeBuildInputs ? [ ]
-# # Add dependencies to buildInputs if they will end up copied or linked into the
-# # final output or otherwise used at runtime.
-# , buildInputs ? [ ]
-# # Dependencies needed only to run tests are similarly classified between native
-# # (executed during build) and non-native (executed at runtime). These
-# # dependencies are only injected when doCheck is set to true.
-# #, nativeCheckInputs, checkInputs
-# , propagatedBuildInputs ? [ ]
-# , propagatedNativeBuildInputs ? [ ]
-#
-# We created custom
+  #, unpackPhase, buildPhase, installPhase
+  #
+  # and though we could use the phases, we could also just define our own builder:
+  # , builder ? ""
+  # #
+  # # Add dependencies to nativeBuildInputs if they are executed during the build
+  # # process.
+  # , nativeBuildInputs ? [ ]
+  # # Add dependencies to buildInputs if they will end up copied or linked into the
+  # # final output or otherwise used at runtime.
+  # , buildInputs ? [ ]
+  # # Dependencies needed only to run tests are similarly classified between native
+  # # (executed during build) and non-native (executed at runtime). These
+  # # dependencies are only injected when doCheck is set to true.
+  # #, nativeCheckInputs, checkInputs
+  # , propagatedBuildInputs ? [ ]
+  # , propagatedNativeBuildInputs ? [ ]
+  #
+  # We created custom
 , customShellHook
-# The remaining attributes will all be converted to into environment variables
+  # The remaining attributes will all be converted to into environment variables
 , ...
 }@inputAttrs:
 let
@@ -116,15 +116,15 @@ let
   ];
 
   shellEnv = writeTextFile {
-      name = "shellEnv";
-      text = ''
+    name = "shellEnv";
+    text = ''
       '';
-    };
+  };
 in
 # (From:
-#   * https://nixos.org/manual/nixpkgs/unstable/#sec-using-stdenv
-#   * https://nixos.org/manual/nixpkgs/unstable/#ssec-stdenv-attributes
-# )
+  #   * https://nixos.org/manual/nixpkgs/unstable/#sec-using-stdenv
+  #   * https://nixos.org/manual/nixpkgs/unstable/#ssec-stdenv-attributes
+  # )
 stdenv.mkDerivation ({
   # =================================================================
   # (From: https://nixos.org/manual/nixpkgs/unstable/#chap-cross)
@@ -154,21 +154,24 @@ stdenv.mkDerivation ({
   propagatedBuildInputs = mergeBuildInputs "propagatedBuildInputs";
   propagatedNativeBuildInputs = mergeBuildInputs "propagatedNativeBuildInputs";
 
-  shellHook = lib.concatStringsSep "\n"  (lib.catAttrs "shellHook"
-    (lib.reverseList inputsFrom ++ [ inputAttrs ]));
-
-  buildPhase = ''
+  buildPhaseEnvVars = ''
     export >> "${shellEnv}"
   '';
 
-  installPhase = ''
-    runHook preInstall
+  installPhase =
+    let
+      # shellHooks across inputs are collated into one hook
+      collatedInputShellHooks = lib.concatStringsSep "\n" (lib.catAttrs "shellHook"
+        (lib.reverseList inputsFrom ++ [ inputAttrs ]));
+    in
+    ''
+      runHook preInstall
 
-    install --target $out/build_env -D build_env
-    install -m 755 ${customShellHook shellEnv} -D $out/bin/${name}
+      install --target $out/build_env -D build_env
+      install -m 755 ${customShellHook collatedInputShellHooks shellEnv} -D ${name}
 
-    runHook postInstall
-  '';
+      runHook postInstall
+    '';
 
   preferLocalBuild = true;
 
@@ -177,6 +180,7 @@ stdenv.mkDerivation ({
     description = "Rust development shell for integration with IDEs and personal experimentation. This is not meant to be an environment within which builds meant for distribution are produced.";
     #license = licenses.ofl;
     platforms = platforms.all;
-    maintainers = [];
+    maintainers = [ ];
+    mainProgram = name;
   };
 } // rest)
