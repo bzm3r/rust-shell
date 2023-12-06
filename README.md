@@ -25,3 +25,11 @@ The ideas behind its architecture are:
 * unlike `mkShell`, `mkDevShell` has an `installPhase` which:
     * copies out the environment variables recorded in the `buildPhase`
     * the environment variables collated in its `builtPhase`
+
+## TODO
+- [ ] replace all bash with Rust `xshell`/`xflags`-based scripts/programs (and once done, add a "Towards a Bash-free Future" badge)
+- [ ] provide multiple shells (rust-stable, rust-nightly, etc.)
+- [ ] generalize and extract relevant parts for use with other languages (e.g. Haskell)
+- [ ] check for what the user's current shell is, and then then initiate a development shell that uses it, rather than hardcoding use of zsh
+- [ ] allow suspension/rewaking of a dev shell?
+- [ ] add a "No Flakes" badge
