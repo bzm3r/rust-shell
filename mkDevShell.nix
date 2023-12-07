@@ -161,11 +161,11 @@ stdenv.mkDerivation ({
           inherit name;
           executable = true;
           text = ''
-            #!/usr/bin/env zsh
+            #!/usr/bin/env bash
             set -xeuo pipefail
 
-            ENV_SNAPSHOT=$(realpath -- "$(dirname -- "''${(%):-%N}")/recorded_env")
-            source $ENV_SNAPSHOT
+            ENV_SNAPSHOT=$(realpath -- "$(dirname -- "''${BASH_SOURCE[0]}")/recorded_env")
+            source "$ENV_SNAPSHOT"
             ${
               lib.concatStringsSep "\n" (
                 lib.catAttrs "shellHook"
@@ -180,8 +180,9 @@ stdenv.mkDerivation ({
 
             # TODO: Should do folder creation elegantly/robustly later (check to see
             # if it exists, rather than just blindly creating it).
-            mkdir ${CARGO_HOME}
-            export CARGO_HOME=${CARGO_HOME}
+            CARGO_HOME="$(realpath ${CARGO_HOME})"
+            export CARGO_HOME
+            mkdir "$CARGO_HOME"
 
             # overwrite any existing config.toml with one from home.
             # TODO: in the future, perform a merge with an existing file?
@@ -189,18 +190,16 @@ stdenv.mkDerivation ({
 
             # create .<name>_sccache cargoConfigDir (if it doesn't already exist)
             echo "Creating SCCACHE_DIR at ${SCCACHE_DIR}"
-            mkdir ${SCCACHE_DIR}
-            export SCCACHE_DIR="$(realpath ${SCCACHE_DIR})"
+            SCCACHE_DIR="$(realpath ${SCCACHE_DIR})"
+            mkdir "$SCCACHE_DIR"
+            export SCCACHE_DIR
             # name of the workspace for purposes such as
             export DEFAULT_WORKSPACE=${name}
-
-            zsh -i
           '';
         };
     in
     ''
       export >> recorded_env
-      sd -F "declare -x" "export" recorded_env
       cp ${customShellHook} ${name}
     '';
 

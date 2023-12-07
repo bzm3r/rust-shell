@@ -26,10 +26,10 @@ mkDevShell (
     inherit name;
     CARGO_HOME = "/home/${userName}/.cargo_${name}";
     SCCACHE_DIR = "/home/${userName}/.sccache_${name}";
-    CONFIG_SHELL=defaultShell;
-    builder=defaultShell;
-    SHELL=defaultShell;
-    shell=defaultShell;
+    # CONFIG_SHELL=defaultShell;
+    # builder=defaultShell;
+    # SHELL=defaultShell;
+    # shell=defaultShell;
     HOME="home/${userName}";
     storedCargoConfig = rust_over_pkgs.writeText "config.toml"
       ''
@@ -54,4 +54,3 @@ mkDevShell (
     ];
   }
 )
-# # continue in interactive mode
