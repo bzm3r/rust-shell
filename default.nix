@@ -52,48 +52,6 @@ mkDevShell (
       )
       sccache
     ];
-    # technically, since the attributes of shellEnv are merged into the attributes
-    # pass to `mkDevShell`, we could use the environment variables they are
-    # supposed to generate within the shell hook. But, for the sake of clarity and
-    # robustness, it is better to be direc by hardcoding in the expected values
-    # into the shell hook at creation.
-    #
-    # This function takes as input a path to the recording of the environment
-    # variables that the shell's dependencies helped define. This recording will
-    # be created by the `mkDevShell` function.
-    #
-    # The output of this function will be the primary executable output of the program (i.e. what the
-    # user will call). It will be copied into the nix store in the installPhase
-    # of the mkDerivation wrapped by mkDevShell.
-
   }
 )
-
-# # TODO: convert this into a Rust script ASAP
-# set -xeuo pipefail
-
-# source ${recordedEnvVars}
-# # Is this done correctly?
-# ${inputHooks}
-
-# # make a .cargo directory (if it doesn't already exist)
-# echo "Creating CARGO_HOME at ${cargoHome}"
-
-# # TODO: Should do folder creation elegantly/robustly later (check to see
-# # if it exists, rather than just blindly creating it).
-# mkdir ${cargoHome}
-# export CARGO_HOME=${cargoHome}
-
-# # overwrite any existing config.toml with one from home.
-# # TODO: in the future, perform a merge with an existing file?
-# cp --remove-destination ${storedCargoConfig} ${cargoConfigPath}
-
-# # create .<name>_sccache cargoConfigDir (if it doesn't already exist)
-# echo "Creating SCCACHE_DIR at ${sccacheDir}"
-# mkdir ${sccacheDir}
-# SCCACHE_DIR=$(realpath ${sccacheDir})
-# export SCCACHE_DIR=$SCCACHE_DIR
-# # name of the workspace for purposes such as
-# export DEFAULT_WORKSPACE=${name}
-
 # # continue in interactive mode
