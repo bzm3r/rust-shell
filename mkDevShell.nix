@@ -72,6 +72,8 @@
   # #, nativeCheckInputs, checkInputs
   # , propagatedBuildInputs ? [ ]
   # , propagatedNativeBuildInputs ? [ ]
+, CARGO_HOME
+, SCCACHE_DIR
   # The remaining attributes will all be converted to into environment variables
 , ...
 }@inputAttrs:
@@ -109,14 +111,9 @@ let
     "nativeBuildInputs"
     "propagatedBuildInputs"
     "propagatedNativeBuildInputs"
+    "storedCargoConfig"
     "shellHook"
   ];
-
-  shellEnv = writeTextFile {
-    name = "shellEnv";
-    text = ''
-      '';
-  };
 in
 # (From:
   #   * https://nixos.org/manual/nixpkgs/unstable/#sec-using-stdenv
@@ -164,22 +161,46 @@ stdenv.mkDerivation ({
           inherit name;
           executable = true;
           text = ''
-                #!/usr/bin/env zsh
-                source $(realpath -- "$(dirname -- "''${(%):-%N}")/$1")
-                ${
-                  lib.concatStringsSep "\n" (
-                    lib.catAttrs "shellHook"
-                    (
-                      lib.reverseList inputsFrom ++ [ inputAttrs ]
-                    )
-                  )
-                }
-                zsh -i
+            #!/usr/bin/env zsh
+            set -xeuo pipefail
+
+            ENV_SNAPSHOT=$(realpath -- "$(dirname -- "''${(%):-%N}")/recorded_env")
+            source $ENV_SNAPSHOT
+            ${
+              lib.concatStringsSep "\n" (
+                lib.catAttrs "shellHook"
+                (
+                  lib.reverseList inputsFrom ++ [ inputAttrs ]
+                )
+              )
+            }
+
+            # make a .cargo directory (if it doesn't already exist)
+            echo "Creating CARGO_HOME at ${CARGO_HOME}"
+
+            # TODO: Should do folder creation elegantly/robustly later (check to see
+            # if it exists, rather than just blindly creating it).
+            mkdir ${CARGO_HOME}
+            export CARGO_HOME=${CARGO_HOME}
+
+            # overwrite any existing config.toml with one from home.
+            # TODO: in the future, perform a merge with an existing file?
+            cp --remove-destination ${CARGO_HOME} ${CARGO_HOME + "/config.toml"}
+
+            # create .<name>_sccache cargoConfigDir (if it doesn't already exist)
+            echo "Creating SCCACHE_DIR at ${SCCACHE_DIR}"
+            mkdir ${SCCACHE_DIR}
+            export SCCACHE_DIR="$(realpath ${SCCACHE_DIR})"
+            # name of the workspace for purposes such as
+            export DEFAULT_WORKSPACE=${name}
+
+            zsh -i
           '';
         };
     in
     ''
       export >> recorded_env
+      sd -F "declare -x" "export" recorded_env
       cp ${customShellHook} ${name}
     '';
 
