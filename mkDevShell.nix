@@ -72,10 +72,6 @@
   # #, nativeCheckInputs, checkInputs
   # , propagatedBuildInputs ? [ ]
   # , propagatedNativeBuildInputs ? [ ]
-  #
-  # `customShellHook` is a function which takes: (inputShellHooks, shellEnv) ->
-  # <<store path to an executable text file>>
-, customShellHook
   # The remaining attributes will all be converted to into environment variables
 , ...
 }@inputAttrs:
@@ -156,22 +152,43 @@ stdenv.mkDerivation ({
   propagatedBuildInputs = mergeBuildInputs "propagatedBuildInputs";
   propagatedNativeBuildInputs = mergeBuildInputs "propagatedNativeBuildInputs";
 
-  buildPhaseEnvVars = ''
-    export >> "${shellEnv}"
-  '';
+  phases = [ "buildPhase" "installPhase" ];
 
-  installPhase =
+  buildPhase =
     let
-      # shellHooks across inputs are collated into one hook
-      inputShellHooks = lib.concatStringsSep "\n" (lib.catAttrs "shellHook"
-        (lib.reverseList inputsFrom ++ [ inputAttrs ]));
+      # a concatenation of the various shell hooks that are required by
+      # the buildInputs that go into making up the shell environment
+      # inputHooks: recordedEnvVars:
+      customShellHook =
+        writeTextFile {
+          inherit name;
+          executable = true;
+          text = ''
+                #!/usr/bin/env zsh
+                source $(realpath -- "$(dirname -- "''${(%):-%N}")/$1")
+                ${
+                  lib.concatStringsSep "\n" (
+                    lib.catAttrs "shellHook"
+                    (
+                      lib.reverseList inputsFrom ++ [ inputAttrs ]
+                    )
+                  )
+                }
+                zsh -i
+          '';
+        };
     in
     ''
+      export >> recorded_env
+      cp ${customShellHook} ${name}
+    '';
+
+  installPhase =
+    ''
       runHook preInstall
-
-      install --target $out/build_env -D build_env
-      install -m 755 ${customShellHook inputShellHooks shellEnv} -D ${name}
-
+      mkdir $out
+      install -D --t $out recorded_env
+      install -m 755 --t $out ${name}
       runHook postInstall
     '';
 
