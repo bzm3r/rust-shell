@@ -17,11 +17,4 @@ Cargo.lock
 
 /target
 
-# custom
-.direnv
-.cargo
-
-# .sccache
-.sccache
-
 /result

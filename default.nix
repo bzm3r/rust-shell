@@ -1,20 +1,37 @@
-{
-  pkgs ? (import <nixpkgs> {}),
-  userName,
+# pkgs could from the derivation, or outside of it
+{ userName
+, nixpkgsOutPath ? <nixpkgs>
 }:
 let
-  sources = import ./npins;
-  rust_over_pkgs = pkgs.extend (import sources.rust-overlay);
+  pkgs = import nixpkgsOutPath {
+    overlays = import ./nixpkgs/overlays.nix;
+    config = import ./nixpkgs/config.nix;
+  };
 
   # A wrapper around `pkgs.stdenv.mkShell` that is almost a copy of it
   mkDevShell = (import ./mkDevShell.nix) {
-    inherit (rust_over_pkgs) lib buildEnv writeTextFile;
-    stdenv = rust_over_pkgs.stdenvAdapters.useMoldLinker rust_over_pkgs.clangStdenv;
+    inherit (pkgs) lib buildEnv writeTextFile;
+    stdenv = (pkgs.stdenvAdapters.useMoldLinker pkgs.clangStdenv).override {
+      cc = null;
+      preHook = "";
+      allowedRequisites = null;
+      initialPath = [ pkgs.coreutils ];
+      shell = pkgs.lib.getExe pkgs.bash;
+      extraNativeBuildInputs = with pkgs; [
+        rustfmt
+        rustc
+        cargo
+        rust-analyzer
+        clippy
+        sccache
+        sd
+      ];
+    };
   };
   # The name of our custom dev shell (also the name of the package, and the
   # binary script which initializes our shell)
   name = "rust-shell";
-  defaultShell = "${rust_over_pkgs.zsh}/bin/zsh";
+  HOME = "/home/${userName}";
 in
 # mkDevShell is mostly just an annotated copy of mkShell; however, it also has
   # an installPhase where it copies out
@@ -23,34 +40,13 @@ mkDevShell (
   # a user's shell, but for now I am hardcoding it as zsh (see the
   # customShellHook attribute).
   {
-    inherit name;
-    CARGO_HOME = "/home/${userName}/.cargo_${name}";
-    SCCACHE_DIR = "/home/${userName}/.sccache_${name}";
-    # CONFIG_SHELL=defaultShell;
-    # builder=defaultShell;
-    # SHELL=defaultShell;
-    # shell=defaultShell;
-    HOME="home/${userName}";
-    storedCargoConfig = rust_over_pkgs.writeText "config.toml"
+    inherit name HOME;
+    CARGO_HOME = "${HOME}/.cargo_${name}";
+    SCCACHE_DIR = "${HOME}/.sccache_${name}";
+    storedCargoConfig = pkgs.writeText "config.toml"
       ''
         [build]
-        rustc-wrapper = "${rust_over_pkgs.sccache}/bin/sccache"
+        rustc-wrapper = "${pkgs.sccache}/bin/sccache"
       '';
-    packages = with rust_over_pkgs; [
-      (
-        rust-bin.stable.latest.default.override
-          {
-            extensions = [
-              "rustfmt"
-              "rust-std"
-              "rust-src"
-              "rust-analyzer"
-              "clippy"
-              "llvm-tools-preview"
-            ];
-          }
-      )
-      sccache
-    ];
   }
 )

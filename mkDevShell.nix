@@ -72,9 +72,10 @@
   # #, nativeCheckInputs, checkInputs
   # , propagatedBuildInputs ? [ ]
   # , propagatedNativeBuildInputs ? [ ]
+  # The remaining attributes will all be converted to into environment variables
 , CARGO_HOME
 , SCCACHE_DIR
-  # The remaining attributes will all be converted to into environment variables
+, storedCargoConfig
 , ...
 }@inputAttrs:
 let
@@ -114,6 +115,7 @@ let
     "storedCargoConfig"
     "shellHook"
   ];
+  CARGO_CONFIG_PATH = CARGO_HOME + "/config.toml";
 in
 # (From:
   #   * https://nixos.org/manual/nixpkgs/unstable/#sec-using-stdenv
@@ -153,62 +155,46 @@ stdenv.mkDerivation ({
 
   buildPhase =
     let
-      # a concatenation of the various shell hooks that are required by
+      # a concatenation of the various shell hookzs that are required by
       # the buildInputs that go into making up the shell environment
-      # inputHooks: recordedEnvVars:
-      customShellHook =
-        writeTextFile {
-          inherit name;
-          executable = true;
-          text = ''
-            #!/usr/bin/env bash
-            set -xeuo pipefail
-
-            ENV_SNAPSHOT=$(realpath -- "$(dirname -- "''${BASH_SOURCE[0]}")/recorded_env")
-            source "$ENV_SNAPSHOT"
-            ${
-              lib.concatStringsSep "\n" (
-                lib.catAttrs "shellHook"
-                (
-                  lib.reverseList inputsFrom ++ [ inputAttrs ]
-                )
-              )
-            }
-
-            # make a .cargo directory (if it doesn't already exist)
-            echo "Creating CARGO_HOME at ${CARGO_HOME}"
-
-            # TODO: Should do folder creation elegantly/robustly later (check to see
-            # if it exists, rather than just blindly creating it).
-            CARGO_HOME="$(realpath ${CARGO_HOME})"
-            export CARGO_HOME
-            mkdir "$CARGO_HOME"
-
-            # overwrite any existing config.toml with one from home.
-            # TODO: in the future, perform a merge with an existing file?
-            cp --remove-destination ${CARGO_HOME} ${CARGO_HOME + "/config.toml"}
-
-            # create .<name>_sccache cargoConfigDir (if it doesn't already exist)
-            echo "Creating SCCACHE_DIR at ${SCCACHE_DIR}"
-            SCCACHE_DIR="$(realpath ${SCCACHE_DIR})"
-            mkdir "$SCCACHE_DIR"
-            export SCCACHE_DIR
-            # name of the workspace for purposes such as
-            export DEFAULT_WORKSPACE=${name}
-          '';
-        };
+      shellHooks = lib.concatStringsSep "\n" (
+        lib.catAttrs "shellHook"
+          (
+            lib.reverseList inputsFrom ++ [ inputAttrs ]
+          )
+      );
+      mkDirs = ''
+        mkdir -p "${CARGO_HOME}"
+        # TODO: in the future, perform a merge with an existing file?
+        cp --remove-destination  ${storedCargoConfig} ${CARGO_CONFIG_PATH}
+        mkdir -p "${SCCACHE_DIR}"
+      '';
+      shellInitContent = ''
+        # shell hooks concatenated from build inputs for this shell
+        ${shellHooks}
+        # make cargo home directory, sccache directory, and config.toml
+        ${mkDirs}
+      '';
     in
     ''
-      export >> recorded_env
-      cp ${customShellHook} ${name}
+      echo "buildPhase PWD: $PWD"
+      echo "buildPhase out: $out"
+      echo "buildPhase ls: $(ls)"
+      export >> shell-init
+      echo "${shellInitContent}" >> shell-init
+      sd -p -F "declare -x" "export" shell-init
+      sd -p -F 'PATH="' 'PATH="$PATH:' shell-init
+      sd -F
     '';
 
   installPhase =
     ''
       runHook preInstall
-      mkdir $out
-      install -D --t $out recorded_env
-      install -m 755 --t $out ${name}
+      echo "PWD: $PWD"
+      echo "out: $out"
+      echo "ls: $(ls)"
+      echo "cat env-vars: $(cat env-vars)"
+      install -m 755 -D --target-directory $out $PWD/shell-init
       runHook postInstall
     '';
 

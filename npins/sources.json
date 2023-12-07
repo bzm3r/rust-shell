@@ -1,17 +1,4 @@
 {
-  "pins": {
-    "rust-overlay": {
-      "type": "Git",
-      "repository": {
-        "type": "GitHub",
-        "owner": "oxalica",
-        "repo": "rust-overlay"
-      },
-      "branch": "master",
-      "revision": "1fdfc1689218998460983986501bd65ba5bbee0f",
-      "url": "https://github.com/oxalica/rust-overlay/archive/1fdfc1689218998460983986501bd65ba5bbee0f.tar.gz",
-      "hash": "0ilmn9v1lmm1051m7vcp3bj6a7az0jzbq4ndvak48i53vd416i6d"
-    }
-  },
+  "pins": {},
   "version": 3
 }
