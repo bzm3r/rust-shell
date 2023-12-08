@@ -175,25 +175,27 @@ stdenv.mkDerivation ({
         # make cargo home directory, sccache directory, and config.toml
         ${mkDirs}
       '';
+      shellInit = "shell-init";
+      exportFixes = import ./exportFixes.nix { inherit lib shellInit; };
     in
     ''
-      echo "buildPhase PWD: $PWD"
-      echo "buildPhase out: $out"
-      echo "buildPhase ls: $(ls)"
-      export >> shell-init
-      echo "${shellInitContent}" >> shell-init
-      sd -p -F "declare -x" "export" shell-init
-      sd -p -F 'PATH="' 'PATH="$PATH:' shell-init
-      sd -F
+      # echo "buildPhase PWD: $PWD"
+      # echo "buildPhase out: $out"
+      # echo "buildPhase ls: $(ls)"
+
+      echo "exporting vars to shellInit"
+      export >> ${shellInit}
+      ${exportFixes}
+
+      echo "${shellInitContent}" >> ${shellInit}
     '';
 
   installPhase =
     ''
       runHook preInstall
-      echo "PWD: $PWD"
-      echo "out: $out"
-      echo "ls: $(ls)"
-      echo "cat env-vars: $(cat env-vars)"
+      # echo "PWD: $PWD"
+      # echo "out: $out"
+      # echo "ls: $(ls)"
       install -m 755 -D --target-directory $out $PWD/shell-init
       runHook postInstall
     '';
