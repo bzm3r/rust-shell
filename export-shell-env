@@ -1,0 +1,5 @@
+#!/usr/bin/env zsh
+PROJECT_DIR="/home/bzm3r/rust-shell";
+RESULT_DIR="${PROJECT_DIR}/result";
+TESTS_DIR="${PROJECT_DIR}/tests";
+zsh -c "source ${RESULT_DIR}/shell-init ; mkdir -p ${TESTS_DIR} ; export >> ${TESTS_DIR}/rust-shell-export"

@@ -48,5 +48,6 @@ mkDevShell (
         [build]
         rustc-wrapper = "${pkgs.sccache}/bin/sccache"
       '';
+    IN_NIX_SHELL = "impure";
   }
 )
