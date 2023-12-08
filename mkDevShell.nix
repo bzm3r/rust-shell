@@ -177,6 +177,10 @@ stdenv.mkDerivation ({
       '';
       shellInit = "shell-init";
       exportFixes = import ./exportFixes.nix { inherit lib shellInit; };
+      startShell = ''
+        #!/usr/bin/env zsh
+        source $out/shell-init;zsh -i
+      '';
     in
     ''
       # echo "buildPhase PWD: $PWD"
@@ -188,6 +192,8 @@ stdenv.mkDerivation ({
       ${exportFixes}
 
       echo "${shellInitContent}" >> ${shellInit}
+      echo "${startShell}" >> ${name}
+      cat ${name};
     '';
 
   installPhase =
@@ -197,6 +203,7 @@ stdenv.mkDerivation ({
       # echo "out: $out"
       # echo "ls: $(ls)"
       install -m 755 -D --target-directory $out $PWD/shell-init
+      install -m 755 -D --target-directory $out $PWD/${name}
       runHook postInstall
     '';
 
