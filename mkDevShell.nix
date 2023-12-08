@@ -183,6 +183,7 @@ stdenv.mkDerivation ({
       '';
     in
     ''
+      runHook preBuild
       # echo "buildPhase PWD: $PWD"
       # echo "buildPhase out: $out"
       # echo "buildPhase ls: $(ls)"
@@ -193,7 +194,7 @@ stdenv.mkDerivation ({
 
       echo "${shellInitContent}" >> ${shellInit}
       echo "${startShell}" >> ${name}
-      cat ${name};
+      runHook postBuild
     '';
 
   installPhase =

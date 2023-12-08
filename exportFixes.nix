@@ -11,9 +11,11 @@ let
       find = "export ${label}(.*)$";
       replace = replaceComment label "deleted";
     };
-    extend = label: {
+    # when extending path vars, we choose to prepend to the parent, so that
+    # child entries always win over parent entries. 
+    prepend = label: {
       find = "export ${label}\=${doubleQuote "(.+)"}$";
-      replace = "${replaceComment label "extended"}\nexport ${label}\=${doubleQuote ("$$" + label + ":$1")}";
+      replace = "${replaceComment label "prepended"}\nexport ${label}\=${doubleQuote ("$$" + label + ":$1")}";
     };
   };
 

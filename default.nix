@@ -1,5 +1,6 @@
 # pkgs could from the derivation, or outside of it
 { userName
+, name
 , nixpkgsOutPath ? <nixpkgs>
 }:
 let
@@ -21,16 +22,20 @@ let
         rustfmt
         rustc
         cargo
+        # when using VS code + rust-analyzer, make sure to have the extension
+        # point to this "ambient" rust-analyzer binary, rather than the one
+        # packaged by the extension itself
         rust-analyzer
         clippy
         sccache
+        (lib.highprio gcc)
+        mold
         sd
       ];
     };
   };
   # The name of our custom dev shell (also the name of the package, and the
   # binary script which initializes our shell)
-  name = "rust-shell";
   HOME = "/home/${userName}";
 in
 # mkDevShell is mostly just an annotated copy of mkShell; however, it also has
@@ -48,6 +53,6 @@ mkDevShell (
         [build]
         rustc-wrapper = "${pkgs.sccache}/bin/sccache"
       '';
-    IN_NIX_SHELL = "impure";
+    IN_NIX_SHELL = "impure"; # these custom shells are impure by construction
   }
 )
