@@ -1,7 +1,7 @@
 # pkgs could from the derivation, or outside of it
-{ userName
-, name
-, pkgs ? (import <nixpkgs> {})
+{ name
+, cargoHomeBase
+, pkgs ? (import <nixpkgs> { })
 }:
 let
   # A wrapper around `pkgs.stdenv.mkShell` that is almost a copy of it
@@ -42,9 +42,6 @@ let
       ];
     };
   };
-  # The name of our custom dev shell (also the name of the package, and the
-  # binary script which initializes our shell)
-  HOME = "/home/${userName}";
 in
 # mkDevShell is mostly just an annotated copy of mkShell; however, it also has
   # an installPhase where it copies out
@@ -53,9 +50,9 @@ mkDevShell (
   # a user's shell, but for now I am hardcoding it as zsh (see the
   # customShellHook attribute).
   {
-    inherit name HOME;
-    CARGO_HOME = "${HOME}/.cargo_${name}";
-    SCCACHE_DIR = "${HOME}/.sccache_${name}";
+    inherit name;
+    CARGO_HOME = "${cargoHomeBase}/.cargo_${name}";
+    SCCACHE_DIR = "${cargoHomeBase}/.sccache_${name}";
     storedCargoConfig = pkgs.writeText "config.toml"
       ''
         [build]
