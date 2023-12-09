@@ -1,14 +1,9 @@
 # pkgs could from the derivation, or outside of it
 { userName
 , name
-, nixpkgsOutPath ? <nixpkgs>
+, pkgs ? (import <nixpkgs> {})
 }:
 let
-  pkgs = import nixpkgsOutPath {
-    overlays = import ./nixpkgs/overlays.nix;
-    config = import ./nixpkgs/config.nix;
-  };
-
   # A wrapper around `pkgs.stdenv.mkShell` that is almost a copy of it
   mkDevShell = (import ./mkDevShell.nix) {
     inherit (pkgs) lib buildEnv writeTextFile;
