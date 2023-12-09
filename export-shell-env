@@ -1,5 +1,4 @@
-#!/usr/bin/env zsh
+#!/usr/bin/env bash
 PROJECT_DIR="/home/bzm3r/rust-shell";
-RESULT_DIR="${PROJECT_DIR}/result";
 TESTS_DIR="${PROJECT_DIR}/tests";
-zsh -c "source ${RESULT_DIR}/shell-init ; mkdir -p ${TESTS_DIR} ; export >> ${TESTS_DIR}/rust-shell-export"
+nix-shell --argstr userName bzm3r --argstr name rust-shell --show-trace --run "mkdir -p ${TESTS_DIR}; export >> ${TESTS_DIR}/nix-shell-export"
