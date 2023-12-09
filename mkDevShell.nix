@@ -150,8 +150,7 @@ stdenv.mkDerivation ({
   # platform, and target platform is the new derivation’s host platform.
   propagatedBuildInputs = mergeBuildInputs "propagatedBuildInputs";
   propagatedNativeBuildInputs = mergeBuildInputs "propagatedNativeBuildInputs";
-
-  phases = [ "buildPhase" "installPhase" ];
+  dontUnpack = true;
 
   buildPhase =
     let

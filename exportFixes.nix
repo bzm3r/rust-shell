@@ -11,8 +11,8 @@ let
       find = "export ${label}(.*)$";
       replace = replaceComment label "deleted";
     };
-    # when extending path vars, we choose to prepend to the parent, so that
-    # child entries always win over parent entries. 
+    # when prepending path vars, we choose to prepend to the parent, so that
+    # child entries always win over parent entries.
     prepend = label: {
       find = "export ${label}\=${doubleQuote "(.+)"}$";
       replace = "${replaceComment label "prepended"}\nexport ${label}\=${doubleQuote ("$$" + label + ":$1")}";
@@ -94,7 +94,7 @@ builtins.concatStringsSep "\n"
   (
     [ (sdCmd "declare -x" "export") ]
     ++ (map (fixCmd fixActions.delete) (drvAttrs ++ builderVars))
-    ++ (map (fixCmd fixActions.extend) pathLikes)
+    ++ (map (fixCmd fixActions.prepend) pathLikes)
   )
 #++ (map (fixCmd replaceRegex.delete) (drvAttrs ++ builderVars))
-#++ (map (fixCmd replaceRegex.extend) pathLikes)
+#++ (map (fixCmd replaceRegex.prepend) pathLikes)

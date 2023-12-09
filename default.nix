@@ -28,9 +28,10 @@ let
         rust-analyzer
         clippy
         sccache
-        (lib.highprio gcc)
+        gcc
         mold
         sd
+        findutils
       ];
     };
   };
