@@ -17,6 +17,10 @@ let
       find = "export ${label}\=${doubleQuote "(.+)"}$";
       replace = "${replaceComment label "prepended"}\nexport ${label}\=${doubleQuote ("$$" + label + ":$1")}";
     };
+    modify = modifyWith: label: {
+      find = "export ${label}\=${doubleQuote "(.+)"}$";
+      replace = "${replaceComment label "modified"}\nexport ${label}\=${doubleQuote modifyWith}";
+    };
   };
 
   prefixEcho = cmd: "echo ${escapeShellArg cmd} ; ${cmd}";
@@ -76,23 +80,27 @@ let
     "NIX_LOG_FD"
     "OLDPWD"
     "TZ"
-    "SHLVL"
+    # "SHLVL"
     "PWD"
     "SOURCE_DATE_EPOCH"
     "NIX_SSL_CERT_FILE"
     "SSL_CERT_FILE"
     "SHELL"
     "CONFIG_SHELL"
+    # "HOST_PATH"
     "HOME"
-  ] ++ (flatMap (x: [ "${x}" "${x}DIR" ]) [ "TEMP" "TMP" ]);
-
+  ];
   pathLikes = [ "XDG_DATA_DIRS" "PATH" ];
+  tempDirs = [ "TEMP" "TMP" "TEMPDIR" "TMPDIR"];
+  SHLVL = "SHLVL";
 in
 builtins.concatStringsSep "\n"
   (
     [ (sdCmd "declare -x" "export") ]
     ++ (map (fixCmd fixActions.delete) (drvAttrs ++ builderVars))
     ++ (map (fixCmd fixActions.prepend) pathLikes)
+    ++ (map (fixCmd (fixActions.modify "/run/user/$$UID")) tempDirs)
+    ++ [(fixCmd (fixActions.modify "$$(($$SHLVL - 1))") SHLVL)]
   )
 #++ (map (fixCmd replaceRegex.delete) (drvAttrs ++ builderVars))
 #++ (map (fixCmd replaceRegex.prepend) pathLikes)

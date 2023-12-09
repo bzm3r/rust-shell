@@ -31,7 +31,19 @@ let
         gcc
         mold
         sd
-        findutils
+        # vvv Don't care for the trouble below, caused by enabling all build
+        # phases. Would much rather just override it to what we know is
+        # required. (Otherwise, our scripts our patched unnecessarily, etc.)
+        # findutils
+        # # ^^^ needed by something during the build process? vvv
+        # # /nix/store/ns56yviba3ip2n64g8x9yd74ck525cl4-stdenv-linux/setup: line 1229: find: command not found
+        # # error: builder for '/nix/store/kj2ldglqdhh1ml54sf9jildffnb756aw-rust-shell.drv' failed with exit code 127;
+        # #        last 3 log lines:
+        # #        > patching sources
+        # #        > configuring
+        # # > /nix/store/ns56yviba3ip2n64g8x9yd74ck525cl4-stdenv-linux/setup: line
+        # # 1229: find: command not found
+        # gnused
       ];
     };
   };

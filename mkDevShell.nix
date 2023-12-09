@@ -150,7 +150,8 @@ stdenv.mkDerivation ({
   # platform, and target platform is the new derivation’s host platform.
   propagatedBuildInputs = mergeBuildInputs "propagatedBuildInputs";
   propagatedNativeBuildInputs = mergeBuildInputs "propagatedNativeBuildInputs";
-  dontUnpack = true;
+
+  phases = [ "buildPhase" "installPhase" ];
 
   buildPhase =
     let
@@ -178,7 +179,7 @@ stdenv.mkDerivation ({
       exportFixes = import ./exportFixes.nix { inherit lib shellInit; };
       startShell = ''
         #!/usr/bin/env zsh
-        source $out/shell-init;zsh -i
+        source $out/shell-init ; zsh -i
       '';
     in
     ''
