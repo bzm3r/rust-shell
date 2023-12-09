@@ -57,7 +57,6 @@ let
     "doInstallCheck"
     "installPhase"
     "mesonFlags"
-    "name"
     "nativeBuildInputs"
     "out"
     "outputs"
@@ -83,7 +82,6 @@ let
     "NIX_SSL_CERT_FILE"
     "SSL_CERT_FILE"
     "SHELL"
-    "HOST_PATH"
     "CONFIG_SHELL"
     "HOME"
   ] ++ (flatMap (x: [ "${x}" "${x}DIR" ]) [ "TEMP" "TMP" ]);
