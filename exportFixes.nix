@@ -14,33 +14,31 @@ let
     # when prepending path vars, we choose to prepend to the parent, so that
     # child entries always win over parent entries.
     prepend = label: {
-      find = "export ${label}\=${doubleQuote "(.+)"}$";
-      replace = "${replaceComment label "prepended"}\nexport ${label}\=${doubleQuote ("$$" + label + ":$1")}";
+      find = "export ${label}=${doubleQuote "(.+)"}$";
+      replace = ''
+        ${replaceComment label "prepended"}
+        export ${label}=${doubleQuote ("$$" + label + ":$1")}'';
     };
     modify = modifyWith: label: {
-      find = "export ${label}\=${doubleQuote "(.+)"}$";
-      replace = "${replaceComment label "modified"}\nexport ${label}\=${doubleQuote modifyWith}";
+      find = "export ${label}=${doubleQuote "(.+)"}$";
+      replace = ''
+        ${replaceComment label "modified"}
+        export ${label}=${doubleQuote modifyWith}'';
     };
   };
 
   prefixEcho = cmd: "echo ${escapeShellArg cmd} ; ${cmd}";
 
   sdCmd = find: replace:
-    prefixEcho
-      (
-        builtins.concatStringsSep " " [
-          "sd"
-          (escapeShellArg find)
-          (escapeShellArg replace)
-          shellInit
-        ]
-      );
+    prefixEcho (builtins.concatStringsSep " " [
+      "sd"
+      (escapeShellArg find)
+      (escapeShellArg replace)
+      shellInit
+    ]);
   fixCmd = fixAction: label:
-  let
-    find_replace = fixAction label;
-  in
-    with find_replace;
-    prefixEcho (sdCmd find replace);
+    let find_replace = fixAction label;
+    in with find_replace; prefixEcho (sdCmd find replace);
 
   drvAttrs = [
     "__structuredAttrs"
@@ -61,6 +59,7 @@ let
     "doInstallCheck"
     "installPhase"
     "mesonFlags"
+    "meta"
     "nativeBuildInputs"
     "out"
     "outputs"
@@ -91,16 +90,12 @@ let
     "HOME"
   ];
   pathLikes = [ "XDG_DATA_DIRS" "PATH" ];
-  tempDirs = [ "TEMP" "TMP" "TEMPDIR" "TMPDIR"];
+  tempDirs = [ "TEMP" "TMP" "TEMPDIR" "TMPDIR" ];
   SHLVL = "SHLVL";
-in
-builtins.concatStringsSep "\n"
-  (
-    [ (sdCmd "declare -x" "export") ]
-    ++ (map (fixCmd fixActions.delete) (drvAttrs ++ builderVars))
-    ++ (map (fixCmd fixActions.prepend) pathLikes)
-    ++ (map (fixCmd (fixActions.modify "/run/user/$$UID")) tempDirs)
-    ++ [(fixCmd (fixActions.modify "$$(($$SHLVL - 1))") SHLVL)]
-  )
+in builtins.concatStringsSep "\n" ([ (sdCmd "declare -x" "export") ]
+  ++ (map (fixCmd fixActions.delete) (drvAttrs ++ builderVars))
+  ++ (map (fixCmd fixActions.prepend) pathLikes)
+  ++ (map (fixCmd (fixActions.modify "/run/user/$$UID")) tempDirs)
+  ++ [ (fixCmd (fixActions.modify "$$(($$SHLVL - 1))") SHLVL) ])
 #++ (map (fixCmd replaceRegex.delete) (drvAttrs ++ builderVars))
 #++ (map (fixCmd replaceRegex.prepend) pathLikes)

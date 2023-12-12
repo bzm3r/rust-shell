@@ -1,8 +1,5 @@
 # pkgs could from the derivation, or outside of it
-{ name
-, cargoHomeBase
-, pkgs ? (import <nixpkgs> { })
-}:
+{ name, cargoHomeBase, pkgs ? (import <nixpkgs> { }), ... }:
 let
   # A wrapper around `pkgs.stdenv.mkShell` that is almost a copy of it
   mkDevShell = (import ./mkDevShell.nix) {
@@ -42,10 +39,9 @@ let
       ];
     };
   };
-in
-# mkDevShell is mostly just an annotated copy of mkShell; however, it also has
+  # mkDevShell is mostly just an annotated copy of mkShell; however, it also has
   # an installPhase where it copies out
-mkDevShell (
+in mkDevShell (
   # The information defining our shell environment (which should be executed in
   # a user's shell, but for now I am hardcoding it as zsh (see the
   # customShellHook attribute).
@@ -53,11 +49,19 @@ mkDevShell (
     inherit name;
     CARGO_HOME = "${cargoHomeBase}/.cargo_${name}";
     SCCACHE_DIR = "${cargoHomeBase}/.sccache_${name}";
-    storedCargoConfig = pkgs.writeText "config.toml"
-      ''
-        [build]
-        rustc-wrapper = "${pkgs.sccache}/bin/sccache"
-      '';
+    storedCargoConfig = pkgs.writeText "config.toml" ''
+      [build]
+      rustc-wrapper = "${pkgs.sccache}/bin/sccache"
+    '';
     IN_NIX_SHELL = "impure"; # these custom shells are impure by construction
-  }
-)
+
+    meta = {
+      #homepage = "xyz";
+      description =
+        "Rust development shell for integration with IDEs and personal experimentation. This is not meant to be an environment within which builds meant for distribution are produced.";
+      #license = licenses.ofl;
+      platforms = pkgs.lib.platforms.all;
+      maintainers = [ ];
+      mainProgram = name;
+    };
+  })

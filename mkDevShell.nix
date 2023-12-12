@@ -24,7 +24,7 @@ packages ? [ ]
   # ===========================================
   #
   # Set the name of the derivation. (Not optional)
-, name
+, name, meta
 # -----------------------
 # Many packages have dependencies that are not provided in the standard
 # environment. It’s usually sufficient to specify those dependencies in the
@@ -113,7 +113,7 @@ let
   #   * https://nixos.org/manual/nixpkgs/unstable/#ssec-stdenv-attributes
   # )
 in stdenv.mkDerivation ({
-  inherit name;
+  inherit name meta;
   # =================================================================
   # (From: https://nixos.org/manual/nixpkgs/unstable/#chap-cross)
   # Two important categories:
@@ -161,7 +161,7 @@ in stdenv.mkDerivation ({
       # make cargo home directory, sccache directory, and config.toml
       ${mkDirs}
     '';
-    shellInit = "shell-init";
+    shellInit = "${name}-shell-init";
     exportFixes = import ./exportFixes.nix { inherit lib shellInit; };
     startShell = ''
       #!/usr/bin/env zsh
@@ -187,20 +187,10 @@ in stdenv.mkDerivation ({
     # echo "PWD: $PWD"
     # echo "out: $out"
     # echo "ls: $(ls)"
-    install -m 755 -D --target-directory $out/bin $PWD/shell-init
+    install -m 755 -D --target-directory $out/bin $PWD/${name}-shell-init
     install -m 755 -D --target-directory $out/bin $PWD/${name}
     runHook postInstall
   '';
 
   preferLocalBuild = true;
-
-  meta = with lib; {
-    #homepage = "xyz";
-    description =
-      "Rust development shell for integration with IDEs and personal experimentation. This is not meant to be an environment within which builds meant for distribution are produced.";
-    #license = licenses.ofl;
-    platforms = platforms.all;
-    maintainers = [ ];
-    mainProgram = name;
-  };
 } // rest)
