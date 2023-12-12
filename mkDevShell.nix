@@ -108,6 +108,8 @@ let
     "shellHook"
   ];
   CARGO_CONFIG_PATH = CARGO_HOME + "/config.toml";
+  shellInit = "${name}-shell-init";
+  binName = "${name}-shell";
   # (From:
   #   * https://nixos.org/manual/nixpkgs/unstable/#sec-using-stdenv
   #   * https://nixos.org/manual/nixpkgs/unstable/#ssec-stdenv-attributes
@@ -161,11 +163,10 @@ in stdenv.mkDerivation ({
       # make cargo home directory, sccache directory, and config.toml
       ${mkDirs}
     '';
-    shellInit = "${name}-shell-init";
     exportFixes = import ./exportFixes.nix { inherit lib shellInit; };
     startShell = ''
       #!/usr/bin/env zsh
-      source $out/shell-init ; zsh -i
+      source $out/${shellInit} ; zsh -i
     '';
   in ''
     runHook preBuild
@@ -178,7 +179,7 @@ in stdenv.mkDerivation ({
     ${exportFixes}
 
     echo "${shellInitContent}" >> ${shellInit}
-    echo "${startShell}" >> ${name}
+    echo "${startShell}" >> ${binName}
     runHook postBuild
   '';
 
@@ -187,8 +188,8 @@ in stdenv.mkDerivation ({
     # echo "PWD: $PWD"
     # echo "out: $out"
     # echo "ls: $(ls)"
-    install -m 755 -D --target-directory $out/bin $PWD/${name}-shell-init
-    install -m 755 -D --target-directory $out/bin $PWD/${name}
+    install -m 755 -D --target-directory $out $PWD/${shellInit}
+    install -m 755 -D --target-directory $out/bin $PWD/${binName}
     runHook postInstall
   '';
 

@@ -1,7 +1,6 @@
 { lib, shellInit, ... }:
 let
   escapeShellArg = lib.strings.escapeShellArg;
-  flatMap = f: l: lib.lists.flatten (map f l);
 
   doubleQuote = x: ''"${x}"'';
 
