@@ -95,8 +95,9 @@ let
         # remove all buildInputs that are already listed in inputsFrom
         (lib.catAttrs buildInputs inputsFrom)));
 
-  # remove from `attrs` the listed attributes
-  rest = builtins.removeAttrs inputAttrs [
+  # remove from `attrs` the listed attributes, because they are not required for
+  # use of the shell.
+  nonShellAttrs = builtins.removeAttrs inputAttrs [
     "name"
     "packages"
     "inputsFrom"
@@ -194,4 +195,4 @@ in stdenv.mkDerivation ({
   '';
 
   preferLocalBuild = true;
-} // rest)
+} // nonShellAttrs)
