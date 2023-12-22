@@ -1,0 +1,2 @@
+[build]
+rustc-wrapper = "/nix/store/zkyrfkrcqw6x9b0xjj40smr148lcyl2q-sccache-0.7.4/bin/sccache"
