@@ -1,4 +1,0 @@
-#!/usr/bin/env bash
-PROJECT_DIR="/home/bzm3r/rust-shell";
-TESTS_DIR="${PROJECT_DIR}/tests";
-nix-shell --argstr userName bzm3r --argstr name rust-shell --show-trace --run "mkdir -p ${TESTS_DIR}; export >> ${TESTS_DIR}/nix-shell-export"

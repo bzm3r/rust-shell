@@ -7,10 +7,10 @@
         "owner": "bzm3r",
         "repo": "mkDevShell"
       },
-      "branch": "main",
-      "revision": "4bbe240462cd5ba684885986d4a79cb97d6f2645",
-      "url": "https://github.com/bzm3r/mkDevShell/archive/4bbe240462cd5ba684885986d4a79cb97d6f2645.tar.gz",
-      "hash": "1f2r4v8129rxs33zabca8wcnjm39a1a7298qycak6ldaavc9wy2s"
+      "branch": "min-bash",
+      "revision": "0f6e6805552f661e488f6f6f88c30fd76603deed",
+      "url": "https://github.com/bzm3r/mkDevShell/archive/0f6e6805552f661e488f6f6f88c30fd76603deed.tar.gz",
+      "hash": "0yy3mpx8z1iymq5ig6nnw5sh46ghjwi8idmci8m20hda3c5qj585"
     }
   },
   "version": 3
