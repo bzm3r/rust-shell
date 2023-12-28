@@ -18,6 +18,8 @@ let
       gcc
       mold
       sd
+      pkg-config
+      openssl.dev
       # vvv Don't care for the trouble below, caused by enabling all build
       # phases. Would much rather just override it to what we know is
       # required. (Otherwise, our scripts our patched unnecessarily, etc.)
