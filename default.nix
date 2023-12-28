@@ -1,7 +1,8 @@
 let shellFamily = "rust";
-in { pkgs ? (import <nixpkgs> { }), lib, description, base ? "~/CACHE", ... }:
-assert lib.assertMsg (description != "rust"
-  "Description cannot be same as shell family name (${shellFamily})!");
+in { pkgs ? (import <nixpkgs> { }), lib ? (pkgs.lib), description
+, base ? "~/CACHE", ... }:
+assert lib.assertMsg (description != "rust")
+  ("Description cannot be same as shell family name (${shellFamily})!");
 let
   mkDevShell = (import ./npins).mkDevShell;
   stdenv = (pkgs.stdenvAdapters.useMoldLinker pkgs.clangStdenv);
@@ -26,6 +27,8 @@ let
     sccache
     gcc
     mold
+    pkg-config
+    openssh
   ];
 
   meta = {
@@ -35,7 +38,7 @@ let
     maintainers = [ ];
     mainProgram = description;
   };
-in mkDevShell {
+in pkgs.callPackage mkDevShell {
   shellName = {
     family = shellFamily;
     inherit description;
