@@ -2,6 +2,7 @@
 { name, cargoHomeBase, pkgs ? (import <nixpkgs> { }), ... }:
 let
   sources = import ./npins;
+  traceVal = pkgs.lib.traceVal;
   # A wrapper around `pkgs.stdenv.mkShell` that is almost a copy of it
   mkDevShell = pkgs.callPackage sources.mkDevShell {
     stdenv = (pkgs.stdenvAdapters.useMoldLinker pkgs.clangStdenv);
@@ -37,8 +38,8 @@ let
   };
   # mkDevShell is mostly just an annotated copy of mkShell; however, it also has
   # an installPhase where it copies out
-  CARGO_HOME = "${cargoHomeBase}/.cargo_${name}";
-  SCCACHE_DIR = "${cargoHomeBase}/.sccache_${name}";
+  CARGO_HOME = "${traceVal cargoHomeBase}/.cargo_${name}";
+  SCCACHE_DIR = "${traceVal cargoHomeBase}/.sccache_${name}";
   storedCargoConfig = pkgs.writeText "config.toml" ''
     [build]
     rustc-wrapper = "${pkgs.sccache}/bin/sccache"
